@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+// https://developers.google.com/web/ilt/pwa/introduction-to-service-worker
 
 (function() {
     var nativeAddAll = Cache.prototype.addAll;

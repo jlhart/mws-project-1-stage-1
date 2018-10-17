@@ -10,7 +10,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-
+// https://developers.google.com/web/ilt/pwa/introduction-to-service-worker
 'use strict';
 
 // Incrementing CACHE_VERSION will kick off the install event and force previously cached

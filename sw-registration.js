@@ -1,3 +1,6 @@
+/**
+ * Taken from lessons learned at: https://developers.google.com/web/ilt/pwa/introduction-to-service-worker
+ */ 
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' })
     .then(function(registration) {

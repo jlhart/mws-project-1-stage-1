@@ -184,11 +184,15 @@ createRestaurantHTML = (restaurant) => {
 
   // get image file data and build the srcset for responsive images
   const imgUrl = DBHelper.imageUrlForRestaurant(restaurant);
+
+  // srcset code found in forum... can't remember where :p
   var imgFilename = imgUrl.split('.');
   var file = imgFilename[0];
   var ext = imgFilename[1];
   image.srcset = `${file}-large_3x.${ext} 800w, ${file}-medium_2x.${ext} 480w, ${file}-small_1x.${ext} 320w`;
   image.alt = `image of ${restaurant.name} restaurant, specializing in ${restaurant.cuisine_type}, located in ${restaurant.neighborhood}`;
+  // end srcset code
+  
   li.append(image);
 
   const name = document.createElement('h2');
