@@ -207,9 +207,10 @@ createRestaurantHTML = (restaurant) => {
   address.innerHTML = restaurant.address.replace(',', ',<br/>');
   li.append(address);
 
-  const more = document.createElement('button');
+  const more = document.createElement('button'); // <<------- Button -----<<<<<
   more.innerHTML = 'View Details';
   more.setAttribute('aria-label', 'View details for ' + restaurant.name); // add aria label for screen readers
+  more.setAttribute('role', 'button'); // recommended by reviewer... element is already a button not an anchor element?!?
   more.onclick = createListener(restaurant);
   
   li.append(more)
