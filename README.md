@@ -29,8 +29,11 @@ Meet the minimum performance requirements Once you have your app working with th
 [Lighthouse](https://developers.google.com/web/tools/lighthouse/) measures performance in four areas, but my review focused on three:
 
 Progressive Web App score should be at 90 or better.  **Mine scored:** Desktop - **92** / Mobile - **92**
+
 Performance score should be at 70 or better.  **Mine scored:** Desktop - **100** / Mobile - **99**
+
 Accessibility score should be at 90 or better.    **Mine scored:** Desktop - **94** / Mobile - **94**
+
 
 You can audit this site's performance with Lighthouse by using the Audit tab of Chrome Dev Tools.
 
