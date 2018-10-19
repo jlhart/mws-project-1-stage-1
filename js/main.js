@@ -178,21 +178,10 @@ createRestaurantHTML = (restaurant) => {
     }
   });
 
-  const image = document.createElement('img');
-  image.className = 'restaurant-img';
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
-
-  // get image file data and build the srcset for responsive images
-  const imgUrl = DBHelper.imageUrlForRestaurant(restaurant);
-
-  // srcset code found in forum... can't remember where :p
-  var imgFilename = imgUrl.split('.');
-  var file = imgFilename[0];
-  var ext = imgFilename[1];
-  image.srcset = `${file}-large_3x.${ext} 800w, ${file}-medium_2x.${ext} 480w, ${file}-small_1x.${ext} 320w`;
-  image.alt = `image of ${restaurant.name} restaurant, specializing in ${restaurant.cuisine_type}, located in ${restaurant.neighborhood}`;
-  // end srcset code
+  // build image element to load to page
+  const image = DBHelper.imageDataForRestaurant(restaurant);
   
+  // add image to page
   li.append(image);
 
   const name = document.createElement('h2');
@@ -207,10 +196,10 @@ createRestaurantHTML = (restaurant) => {
   address.innerHTML = restaurant.address.replace(',', ',<br/>');
   li.append(address);
 
-  const more = document.createElement('button'); // <<------- Button -----<<<<<
+  const more = document.createElement('button');
   more.innerHTML = 'View Details';
   more.setAttribute('aria-label', 'View details for ' + restaurant.name); // add aria label for screen readers
-  more.setAttribute('role', 'button'); // recommended by reviewer... element is already a button not an anchor element?!?
+  more.setAttribute('role', 'button'); 
   more.onclick = createListener(restaurant);
   
   li.append(more)

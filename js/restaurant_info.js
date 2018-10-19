@@ -68,21 +68,27 @@ fetchRestaurantFromURL = (callback) => {
 fillRestaurantHTML = (restaurant = self.restaurant) => {
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
+  
   // add attributes to name for accessibility
   name.setAttribute('aria-label', restaurant.name);
   name.tabIndex = 0;
 
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
+
   // add attributes to address for accessibility
   address.setAttribute('aria-label', 'address');
   address.tabIndex = 0;
 
-  const image = document.getElementById('restaurant-img');
-  image.className = 'restaurant-img';
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.alt = `image of ${restaurant.name} restaurant, specializing in ${restaurant.cuisine_type}, located in ${restaurant.neighborhood}`;
+  // build image element to load to page
+  const image = DBHelper.imageDataForRestaurant(restaurant);
+  
+  // setup the id to match image placeholder for css...
+  image.id = 'restaurant-img';
 
+  // get the image placeholder and replace it with the new image
+  document.getElementById('restaurant-img').replaceWith(image); 
+  
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
 
