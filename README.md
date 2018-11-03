@@ -10,30 +10,36 @@ For the **Restaurant Reviews** projects, I have incrementally converted a static
 
 In Stage Two, I have taken the responsive, accessible design I built in **Stage One** and connected it to an external server. I modified the web app to use asynchronous JavaScript to request JSON data from the server. I stored data received from the server in an offline database using IndexedDB, which creates an app shell architecture. Finally, I optimized my site to meet performance benchmarks, which I tested using [Lighthouse](https://developers.google.com/web/tools/lighthouse/).
 
+## Project Overview: Stage 3 <---- FINAL PROJECT 
+In Stage Three, I have taken the connected application I built in Stage One and Stage Two and added additional functionality. I added a form to allow users to create their own reviews. When the app is offline, my review form defers updating to the remote database until a connection is established. Finally, I optimized the site to meet even stricter performance benchmarks than my previous project, and tested again using [Lighthouse](https://developers.google.com/web/tools/lighthouse/).
+
 ### Specification
 
-The core functionality of the application did not change for this stage. Only the source of the data changed. I used the fetch() API to make requests to the server to populate the content of the Restaurant Reviews app.
+I used the provided code for the updated [Node development server](https://github.com/udacity/mws-restaurant-stage-3) and I used the README for getting the server up and running locally on my computer. The README contains the API needed for this app to make JSON requests to the server.
+
+This server is different than the server from stage 2, and has added capabilities. Make sure to use the Stage Three server when testing my project. Connecting to this server is the same as with Stage Two, however.
+
+You will find the documentation for the new server in the README file for the server.
 
 ### Prerequisites:
 
-Clone [Stage 2](https://github.com/jlhart/mws-restaurant-stage-2) and **follow the instructions** for getting the local node sails server online. (REQUIRED)
+Clone [Stage 3](https://github.com/udacity/mws-restaurant-stage-3) and **follow the instructions** for getting the local node sails server online. (REQUIRED)
 
 ### Requirements
 
-Use server data instead of local memory In the first version of the application, all of the data for the restaurants was stored in the local application. I changed this behavior so that I am pulling all of the data from the server instead, and using the response data to generate the restaurant information on the main page and the detail page.
+Add a form to allow users to create their own reviews: In previous versions of the application, users could only read reviews from the database. You will need to add a form that adds new reviews to the database. The form should include the user’s name, the restaurant id, the user’s rating, and whatever comments they have. Submitting the form should update the server when the user is online.
 
-**Use IndexedDB to cache JSON responses** In order to maintain offline use with the development server I updated the service worker to store the JSON received by get requests using the IndexedDB API. As with Stage One, any page that has been visited by the user is available offline, with data pulled from the shell database.
+Add functionality to defer updates until the user is connected: If the user is not online, the app should notify the user that they are not connected, and save the users' data to submit automatically when re-connected. In this case, the review should be deferred and sent to the server when connection is re-established (but the review should still be visible locally even before it gets to the server.)
 
-Meet the minimum performance requirements Once you have your app working with the server and working in offline mode, you’ll need to measure your site performance using [Lighthouse](https://developers.google.com/web/tools/lighthouse/).
+Meet the new performance requirements: In addition to adding new features, the performance targets you met in Stage Two have tightened. Using Lighthouse, you’ll need to measure your site performance against the new targets using [Lighthouse](https://developers.google.com/web/tools/lighthouse/).
 
 [Lighthouse](https://developers.google.com/web/tools/lighthouse/) measures performance in four areas, but my review focused on three:
 
 Progressive Web App score should be at 90 or better.  **Mine scored:** Desktop - **92** / Mobile - **92**
 
-Performance score should be at 70 or better.  **Mine scored:** Desktop - **100** / Mobile - **99**
+Performance score should be at 90 or better.  **Mine scored:** Desktop - **98** / Mobile - **99**
 
-Accessibility score should be at 90 or better.    **Mine scored:** Desktop - **94** / Mobile - **94**
-
+Accessibility score should be at 90 or better.   **Mine scored:** Desktop - **94** / Mobile - **94**
 
 You can audit this site's performance with Lighthouse by using the Audit tab of Chrome Dev Tools.
 

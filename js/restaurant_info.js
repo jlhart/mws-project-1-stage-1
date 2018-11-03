@@ -66,6 +66,7 @@ fetchRestaurantFromURL = (callback) => {
  * Create restaurant HTML and add it to the webpage
  */
 fillRestaurantHTML = (restaurant = self.restaurant) => {
+  const db = DBHelper.openDatabase();
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
   
@@ -96,7 +97,20 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
 
-  fillReviewsHTML();
+  if (!db) db = DBHelper.openDatabase() // open idb if it was not passed...
+    // ...then...with db...
+    db.then(db => {
+      DBHelper.fetchReviewsByRestaurantId(restaurant.id, db) // get all reviews for this restaurant...
+      .then((reviews) => {
+        self.restaurant.reviews = reviews;
+        console.log(reviews);
+        if (!reviews) {
+          console.error(error);
+          return;
+        }
+        fillReviewsHTML();  // add review html to page...
+      });
+    });
 }
 
 /**
@@ -131,7 +145,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
 
   if (!reviews) {
     const noReviews = document.createElement('p');
-    noReviews.innerHTML = 'No reviews yet!';
+    noReviews.innerHTML = 'Be the first to review this restaurant!';
     container.appendChild(noReviews);
     return;
   }
@@ -152,12 +166,10 @@ createReviewHTML = (review) => {
   li.appendChild(name);
   li.tabIndex = 0;
 
-  const date = document.createElement('p');
-  date.innerHTML = review.date;
-  li.appendChild(date);
-
   const rating = document.createElement('p');
-  rating.innerHTML = `Rating: ${review.rating}`;
+  rating.innerHTML = `<span aria-label="${review.rating} Star Rating"> Rating: ` + 
+                        `<span aria-hidden="true" class="fa fa-star checked"></span>`.repeat(review.rating) + 
+                     `</span>`;
   li.appendChild(rating);
 
   const comments = document.createElement('p');
@@ -165,6 +177,48 @@ createReviewHTML = (review) => {
   li.appendChild(comments);
 
   return li;
+}
+
+/**
+ * Form validation & submission
+ */
+addReview = () => {
+  event.preventDefault(); // prevent the default action of the form submission...
+  
+  let restaurantId = getParameterByName('id');
+  let name = document.getElementById('name').value;
+  let rating;
+  let comments = document.getElementById('comments').value;
+  rating = document.querySelector('#rating option:checked').value;
+  const review = [name, rating, comments, restaurantId];
+
+  // Add data to DOM
+  const frontEndReview = {
+    restaurant_id: parseInt(review[3]),
+    rating: parseInt(review[1]),
+    name: review[0],
+    comments: review[2].substring(0, 300),
+    createdAt: new Date()
+  };
+
+  console.log('DOM added review: '. frontEndReview);
+
+  // Send review to backend
+  DBHelper.addReview(frontEndReview);
+  addReviewHTML(frontEndReview);
+  document.getElementById('review').reset();
+}
+
+addReviewHTML = (review) => {
+  if (document.getElementById('no-review')) {
+      document.getElementById('no-review').remove();
+  }
+  const container = document.getElementById('reviews-container');
+  const ul = document.getElementById('reviews-list');
+
+  //insert the new review on top
+  ul.insertBefore(createReviewHTML(review), ul.firstChild);
+  container.appendChild(ul);
 }
 
 /**
@@ -192,3 +246,21 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+/**
+ * Window load event listener to determine network status
+ * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+ */
+window.addEventListener('load', function() {
+  var status = document.getElementById("status");
+  
+  function updateOnlineStatus(event) {
+    var condition = navigator.onLine ? "online" : "offline";
+
+    status.className = condition;
+    status.innerHTML = `BROWSER ${condition.toUpperCase()}`;
+  }
+
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+});

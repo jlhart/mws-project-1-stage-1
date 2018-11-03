@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initMap(); // added 
   fetchNeighborhoods();
   fetchCuisines();
+  fetchReviews();
 });
 
 /**
@@ -25,7 +26,7 @@ fetchNeighborhoods = () => {
       fillNeighborhoodsHTML();
     }
   });
-}
+};
 
 /**
  * Set neighborhoods HTML.
@@ -42,7 +43,7 @@ fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
     option.setAttribute('aria-posinset', i+2);
     select.append(option);
   });
-}
+};
 
 /**
  * Fetch all cuisines and set their HTML.
@@ -56,7 +57,21 @@ fetchCuisines = () => {
       fillCuisinesHTML();
     }
   });
-}
+};
+
+/**
+ * Fetch all reviews and set their HTML.
+ */
+fetchReviews = () => {
+  DBHelper.fetchReviews((error, reviews) => {
+    if (error) { // Got an error!
+      console.error(error);
+    } else {
+      self.reviews = reviews;
+      // fillReviewsHTML();
+    }
+  });
+};
 
 /**
  * Set cuisines HTML.
@@ -73,7 +88,7 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
     option.setAttribute('aria-posinset', i+2);
     select.append(option);
   });
-}
+};
 
 /**
  * Initialize leaflet map, called from HTML.
@@ -97,7 +112,7 @@ initMap = () => {
   document.querySelector('#map').tabIndex = -1;
 
   updateRestaurants();
-}
+};
 
 
 /**
@@ -121,7 +136,7 @@ updateRestaurants = () => {
       fillRestaurantsHTML();
     }
   })
-}
+};
 
 /**
  * Clear current restaurants, their HTML and remove their map markers.
@@ -138,7 +153,7 @@ resetRestaurants = (restaurants) => {
   }
   self.markers = [];
   self.restaurants = restaurants;
-}
+};
 
 /**
  * Create all restaurants HTML and add them to the webpage.
@@ -149,7 +164,7 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
     ul.append(createRestaurantHTML(restaurant));
   });
   addMarkersToMap();
-}
+};
 
 /**
  * Create a listener for data to pass back to caller
@@ -161,22 +176,22 @@ createListener = (data) => {
     }
   }
   return;
-}
+};
 
 /**
  * Create restaurant HTML.
  */
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
-  li.tabIndex = 0; // set tabindex
-  li.onclick = createListener(restaurant); // generate a listener for the li
-  // also add a listener for enter key for keyboard naviagation
-  li.addEventListener("keyup", (event) => {
-    if (event.keyCode === 13) {
-      console.log(event.keyCode);
-      window.location = DBHelper.urlForRestaurant(restaurant);
-    }
-  });
+  li.tabIndex = -1; // set tabindex
+  // li.onclick = createListener(restaurant); // generate a listener for the li
+  // // also add a listener for enter key for keyboard naviagation
+  // li.addEventListener("keyup", (event) => {
+  //   if (event.keyCode === 13) {
+  //     console.log(event.keyCode);
+  //     window.location = DBHelper.urlForRestaurant(restaurant);
+  //   }
+  // });
 
   // build image element to load to page
   const image = DBHelper.imageDataForRestaurant(restaurant);
@@ -201,11 +216,47 @@ createRestaurantHTML = (restaurant) => {
   more.setAttribute('aria-label', 'View details for ' + restaurant.name); // add aria label for screen readers
   more.setAttribute('role', 'button'); 
   more.onclick = createListener(restaurant);
-  
-  li.append(more)
+  li.append(more);
+
+  const favorite = document.createElement('div');
+  favorite.tabIndex = 0; // set tabindex
+	favorite.innerHTML = '&hearts;';
+  favorite.setAttribute('aria-label', 'Add ' + restaurant.name + ' as your favorite restaurant'); // add aria label for screen readers
+  favorite.setAttribute('role', 'button'); 
+  favorite.classList.add("favorite_btn");
+	favorite.onclick = (e) => {
+	  const isFavNow = !restaurant.is_favorite;
+	  DBHelper.updateFavoriteStatus(restaurant.id, isFavNow);
+	  restaurant.is_favorite = !restaurant.is_favorite
+	  changeFavElementClass(favorite, restaurant.is_favorite)
+  };
+  favorite.addEventListener("keyup", (event) => {
+      if (event.keyCode === 13) {
+        const isFavNow = !restaurant.is_favorite;
+        DBHelper.updateFavoriteStatus(restaurant.id, isFavNow);
+        restaurant.is_favorite = !restaurant.is_favorite
+        changeFavElementClass(favorite, restaurant.is_favorite)
+      }
+  });
+	changeFavElementClass(favorite, restaurant.is_favorite)
+	li.append(favorite);
 
   return li
-}
+};
+
+changeFavElementClass = (el, fav) => {
+	if (!fav) {
+	  el.classList.remove('favorite_yes');
+	  el.classList.add('favorite_no');
+	  el.setAttribute('aria-label', 'mark as favorite');
+  
+	} else {
+	  el.classList.remove('favorite_no');
+	  el.classList.add('favorite_yes');
+	  el.setAttribute('aria-label', 'remove favorite');
+  
+	}
+};
 
 /**
  * Add markers for current restaurants to the map.
@@ -222,4 +273,22 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     self.markers.push(marker);
   });
 
-} 
+};
+
+/**
+ * Window load event listener to determine network status
+ * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+ */
+window.addEventListener('load', function() {
+  var status = document.getElementById("status");
+  
+  function updateOnlineStatus(event) {
+    var condition = navigator.onLine ? "online" : "offline";
+
+    status.className = condition;
+    status.innerHTML = `BROWSER ${condition.toUpperCase()}`;
+  }
+
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+});
