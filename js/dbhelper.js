@@ -369,7 +369,7 @@ class DBHelper {
     };
 
     // perform fetch POST of review to API endpoint
-    fetch(DBHelper.DATABASE_URL+`/reviews`, fetch_options).then((response) => {
+    fetch(DBHelper.DATABASE_URL+`/restaurants`, fetch_options).then((response) => {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.indexOf('application/json') !== -1) {
         return response.json();
