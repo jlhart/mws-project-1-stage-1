@@ -28,9 +28,13 @@
       <h1><a href="/">Restaurant Reviews</a></h1>
     </nav>
     
-    <ul id="breadcrumb" role="navigation">
-      <li><a href="/">Home</a></li>
-    </ul>
+    <!-- Breadcrumb -->
+    <nav id="breadcrumb" aria-label="Breadcrumb" role="navigation">
+      <ul>
+        <li><a href="/">Home</a></li>
+      </ul>
+    </nav>  
+    <!-- END Breadcrumb -->
     
   </header>
   <!-- END Header Navigation -->
@@ -40,7 +44,7 @@
     
     <!-- Map Container -->
     <section id="map-container" role="application" aria-hidden="true">
-      <div id="map" aria-hidden="true"></div>
+      <div id="map" aria-label="location" aria-hidden="true"></div>
     </section>
     <!-- END Map Container -->
     
@@ -73,7 +77,7 @@
         </div>
         <label for="comments">Comments:</label><br/>
         <textarea id="comments" name="comments"></textarea><br/>
-        <button class="submit" onclick="addReview()">Submit!</button>
+        <button id="btn_submit_review" class="submit" onclick="addReview()">Submit!</button>
       </form>
     </section>
     <!-- END Reviews Form -->

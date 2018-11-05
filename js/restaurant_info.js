@@ -103,9 +103,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
       DBHelper.fetchReviewsByRestaurantId(restaurant.id, db) // get all reviews for this restaurant...
       .then((reviews) => {
         self.restaurant.reviews = reviews;
-        console.log(reviews);
         if (!reviews) {
-          console.error(error);
+          console.log((reviews === undefined) ? 'No Reviews were found in IndexedDb!' : reviews);
           return;
         }
         fillReviewsHTML();  // add review html to page...
@@ -246,21 +245,3 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
-
-/**
- * Window load event listener to determine network status
- * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
- */
-window.addEventListener('load', function() {
-  var status = document.getElementById("status");
-  
-  function updateOnlineStatus(event) {
-    var condition = navigator.onLine ? "online" : "offline";
-
-    status.className = condition;
-    status.innerHTML = `BROWSER ${condition.toUpperCase()}`;
-  }
-
-  window.addEventListener('online',  updateOnlineStatus);
-  window.addEventListener('offline', updateOnlineStatus);
-});
