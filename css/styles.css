@@ -604,6 +604,7 @@ form button:hover,.form button:active,.form button:focus {
   #breadcrumb {
     width: 100%;
     background-color: #fff;
+    text-align: left;
   }
 
   .filter-options select {
