@@ -102,10 +102,10 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     DBHelper.openDatabase().then(db => {
       DBHelper.fetchReviewsByRestaurantId(restaurant.id, db) // get all reviews for this restaurant...
       .then((reviews) => {
-        if (!reviews) {
-          console.log((reviews === undefined) ? 'No Reviews were found in IndexedDb!' : reviews);
-          return;
-        }
+        // if (!reviews) {
+        //   console.log((reviews === undefined) ? 'No Reviews were found in IndexedDb!' : reviews);
+        //   return;
+        // }
         self.restaurant.reviews = reviews;
         fillReviewsHTML();  // add review html to page...
       });

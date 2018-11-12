@@ -495,13 +495,13 @@ class DBHelper {
           }
         });
       })
-      console.log(reviews)
+      // console.log(reviews)
       return tx.complete
     })
 
     // callback
     .then(() => {
-      console.log('CALLBACK!')
+      // console.log('CALLBACK!')
       return callback(null, reviews)
     })
 
@@ -513,11 +513,10 @@ class DBHelper {
 
     if(!navigator.onLine){
       return await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error, reviews) => { // check for offline stored reviews...
-        console.log(reviews);
-        self.reviews = reviews;
-        return self.reviews; // return reviews retrieved from idb...
-      })
-      .then(reviews => Promise.resolve(reviews));
+        console.log(reviews)
+        self.reviews = reviews
+        return reviews
+      }).then(() => reviews);
     } else {
       
       return await fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`) // fetch all reviews for restaurant...
@@ -530,11 +529,11 @@ class DBHelper {
         })
         .catch(async error => {
           const reviews_1 = await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error_1, reviews) => {
-            console.log('Error encountered while fetching reviews...looking for any offline stored reviews...', reviews);
-            self.reviews = reviews;
-            return self.reviews; // return reviews retrieved from idb...
-          });
-          return Promise.resolve(reviews_1);
+            console.log('Error encountered while fetching reviews...looking for any offline stored reviews...', reviews)
+            self.reviews = reviews
+            return self.reviews // return reviews retrieved from idb...
+          })
+          return Promise.resolve(reviews_1)
         });
 
     } // END if...
