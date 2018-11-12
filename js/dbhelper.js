@@ -475,7 +475,7 @@ class DBHelper {
         rs.forEach(review => {
           if (review.restaurant_id == restaurant) {
             console.log('Found matching review in db: ' + review);
-            reviews.push(rs) // filter results
+            reviews.push(review) // filter results
           }
         });
       })
