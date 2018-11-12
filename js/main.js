@@ -68,7 +68,6 @@ fetchReviews = () => {
       console.error(error);
     } else {
       self.reviews = reviews;
-      // fillReviewsHTML();
     }
   });
 };
@@ -130,7 +129,7 @@ updateRestaurants = () => {
 
   DBHelper.fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, (error, restaurants) => {
     if (error) { // Got an error!
-      console.error(error);
+      // console.error(error);
     } else {
       resetRestaurants(restaurants);
       fillRestaurantsHTML();
@@ -207,9 +206,11 @@ createRestaurantHTML = (restaurant) => {
   neighborhood.innerHTML = restaurant.neighborhood;
   li.append(neighborhood);
 
-  const address = document.createElement('p');
-  address.innerHTML = restaurant.address.replace(',', ',<br/>');
-  li.append(address);
+  if (restaurant.address) {
+    const address = document.createElement('p');
+    address.innerHTML = restaurant.address.replace(',', ',<br/>');
+    li.append(address);
+  }
 
   const more = document.createElement('button');
   more.innerHTML = 'View Details';

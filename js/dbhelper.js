@@ -1,9 +1,9 @@
 /**
  * CONSTANTS for DBHelper
  */
-const DB_NAME = 'mws-restaurant-jlhart';
-const DB_VERSION = 3;
-const PORT = 1337;
+  const DB_NAME = 'mws-restaurant-jlhart';
+  const DB_VERSION = 3;
+  const PORT = 1337;
 
 /**
  * Common database helper functions.
@@ -24,7 +24,8 @@ class DBHelper {
           let restaurantStore = db.createObjectStore('restaurants', { keyPath: 'id' })
           let cuisineStore = db.createObjectStore('cuisines', { unique: true})
           let neighborhoodStore = db.createObjectStore('neighborhoods', { unique: true})
-          let reviewsStore = db.createObjectStore('reviews', { keyPath: 'id' })
+          let reviewsStore = db.createObjectStore('reviews', { keyPath: 'id' }).createIndex('restaurant_id', 'restaurant_id');
+          let offlineStore = db.createObjectStore('offline', { keyPath: 'guid' }).createIndex('guid', 'guid');
       }
     })
     // make sure restaurants are fetched
@@ -95,6 +96,16 @@ class DBHelper {
     .then(restaurants => callback(null, restaurants))
     .catch(e => callback(e, null))  // catch/trap errors and send to callback...
   }// END fetchRestaurants(callback, db)...
+
+  /**
+   * Generate GUID for use in uniquely identifying objects for reference/removal.
+   * Adapted from: https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+   */
+  static guid() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    )
+  } // END guid()...
 
   /**
    * Fetch a restaurant by its ID.
@@ -337,30 +348,32 @@ class DBHelper {
    * Add Review to API/Local/iDb accordingly
    */
   static addReview(review) {
-
+    
     console.log('addReview: ', review);
 
-    let offline_obj = {
-      name: 'addReview',
-      data: review,
-      object_type: 'review'
-    };
+    let guid = (review.guid && review.guid !='') ? review.guid : DBHelper.guid();
 
-    // Online?!?!
-    if (!navigator.onLine && (offline_obj.name === 'addReview')) {
-      DBHelper.sendDataWhenOnline(offline_obj); // NOPE...stash it locally until back online...
-      return;
-    }
-
-    // YES! We are Online!...Build data transport...
+    // Build data transport...
     let reviewSend = {
       "name": review.name,
       "rating": parseInt(review.rating),
       "comments": review.comments,
-      "restaurant_id": parseInt(review.restaurant_id)
+      "restaurant_id": parseInt(review.restaurant_id),
+      "guid": guid
     };
 
-    console.log('Posting your review: ', reviewSend);
+    // If the review has not been added to offline db add it...
+    if(!review.guid) {
+      DBHelper.openDatabase() // open database
+        .then(db => {  // add posted review to offline first local store
+          const tx = db.transaction('offline', 'readwrite'); // add every review to offline...
+          const os = tx.objectStore('offline'); // set handle to object store...
+          os.put(reviewSend) // add review to object store...
+          return tx.complete; 
+        })
+    }
+
+    console.log('Attempting to Post your review: ', reviewSend);
 
     var fetch_options = { // setup fetch options
       method: 'POST',
@@ -369,7 +382,7 @@ class DBHelper {
     };
 
     // perform fetch POST of review to API endpoint
-    fetch(DBHelper.DATABASE_URL+`/restaurants`, fetch_options).then((response) => {
+    fetch(DBHelper.DATABASE_URL+`/reviews`, fetch_options).then((response) => {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.indexOf('application/json') !== -1) {
         return response.json();
@@ -383,49 +396,20 @@ class DBHelper {
         const tx = db.transaction('reviews', 'readwrite'); // add each review...
         const os = tx.objectStore('reviews'); // set handle to object store...
         os.put(data) // add review to object store...
+        return db; 
+      })
+      .then(db => {  // remove posted review from local store
+        const tx = db.transaction('offline', 'readwrite'); // delete the review from offline...
+        const os = tx.objectStore('offline'); // set handle to object store...
+        os.delete(data.guid) // delete review from object store...
         return tx.complete; 
       })
 
     })
-    .catch(error => console.log('error:', error)); // trap errors :p
-  };
-
-
-  /**
-   * Send Review to API when back online
-   */
-  static sendDataWhenOnline(offline_obj) {
-    console.log('Offline data:', offline_obj);
-
-    // Notify user offline and review will post when back online...
-    alert('Your browser seems to be Offline\n\nYour review will be posted as soon as your connection is restored!');
-    localStorage.setItem('data', JSON.stringify(offline_obj.data)); // stash the review in a local cubby for now...
-
-    console.log(`Local Storage: ${offline_obj.object_type} stored`);
-
-    // listen for back online...
-    window.addEventListener('online', (event) => {
-
-      console.log('Browser Back Online!');
-
-      let data = JSON.parse(localStorage.getItem('data')); // retrieve locally stashed review data...
-      if (data !== null) {
-
-        console.log(data);
-
-        if (offline_obj.name === 'addReview') {
-          DBHelper.addReview(offline_obj.data); // send the review back to addReview for another attempt at posting review...
-        }
-
-        console.log('LocalState: data sent to restaurants reviews api');
-
-        localStorage.removeItem('data');  // remove local stashed copy of review now that it has been sent to the server!
-
-        console.log(`Local Storage: ${offline_obj.object_type} removed`);
-      }
+    .catch(error => {
+      console.log('error:', error)
     });
   };
-
 
   static updateFavoriteStatus(restaurantId, isFav) {
     const db = DBHelper.openDatabase(); // get handle on database...
@@ -449,6 +433,30 @@ class DBHelper {
       });
   };
 
+  /**
+   * sendPostsToServer()
+   */
+  static async sendPostsToServer() {
+    console.log('Checking for offline data to send...')
+
+    // open database
+    return await DBHelper.openDatabase(db => {
+      db.transaction('offline').objectStore('offline').getAll()
+      .then(reviews => {
+        // loop through items
+        console.log(reviews)
+        reviews.forEach(review => DBHelper.addReview(review))
+      })
+      .then(reviews => {
+        return Promise.resolve(reviews);
+      })
+    })
+    .catch(error => {
+      console.log('No offline posts found...')
+      console.log(error)
+    });
+
+  }; // END sendPostsToServer...
 
   /**
    * Fetch offline reviews from idb by restaurant id with proper error handling.
@@ -460,18 +468,35 @@ class DBHelper {
     // open database
     await DBHelper.openDatabase(db => {
 
-      // loop through items
+      // loop through items...
       const tx = db.transaction('reviews');
-      tx.objectStore('reviews').openCursor().then(function cursorIterate(cursor) {
-        if (!cursor) return;
+      tx.objectStore('reviews').getAll()
+      .then(rs => {
+        rs.forEach(review => {
+          if (rs.restaurant_id == restaurant) {
+            console.log('Found matching review in db: ' + rs);
+            reviews.push(rs) // filter results
+          }
+        });
+      })
 
-        // filter results
-        if (cursor.value.restaurant_id == restaurant) reviews.push(cursor.value)
+      tx.complete;
+      return db;
+    })
+    .then(db => {  
+      // loop through any offline items...
+      const tx = db.transaction('offline');
+      tx.objectStore('offline').getAll()
+      .then(rs => {
+        rs.forEach(review => {
+          if (rs.restaurant_id == restaurant) {
+            console.log('Found matching offline review in db: ' + rs);
+            reviews.push(rs) // filter results
+          }
+        });
+      })
 
-        return cursor.continue().then(cursorIterate);
-      });
-
-      return tx.complete
+      return tx.complete; 
     })
 
     // callback
@@ -481,8 +506,20 @@ class DBHelper {
     .catch(e => callback(e, null))
   };
 
-  static fetchReviewsByRestaurantId(id, db) {
-    return fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`) // fetch all reviews for restaurant...
+  static async fetchReviewsByRestaurantId(id, db) {
+
+    // if(!navigator.onLine){
+    //   return await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error, reviews) => { // check for offline stored reviews...
+    //     self.reviews = reviews;
+    //     if (!reviews) {
+    //       console.error(error); // no reviews found...log error...
+    //       return;
+    //     }
+    //     return Promise.resolve(reviews); // return reviews retrieved from idb...
+    //   });
+    // }
+
+    return await fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`) // fetch all reviews for restaurant...
       .then(response => response.json())  // return json data...
       .then(reviews => {
         const tx = db.transaction('reviews', 'readwrite'); // add each review...

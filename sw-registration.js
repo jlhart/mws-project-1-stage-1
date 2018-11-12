@@ -9,14 +9,22 @@ if('serviceWorker' in navigator) {
     
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then((registration) => {
-        console.log('Registration successful with scope: ', registration.scope);
+        console.log('Registration successful with scope: ', registration.scope)
       }).catch((err) => {
-        console.log('Registration failed with error: ', err);
+        console.log('Registration failed with error: ', err)
       });
 
     navigator.serviceWorker.ready
       .then((registration) => {
-        console.log('Service Worker Ready');
+        return registration.sync.register('sendData')
+      })
+      .then(() => {
+        console.log('Sync event registered...listening...')
+      })
+      .catch(() => {
+        // system was unable to register for a sync,
+        // this could be an OS-level restriction
+        console.log('Sync registration failed!')
       });
 
   });
@@ -26,11 +34,16 @@ if('serviceWorker' in navigator) {
  * Window load event listener to determine network status
  * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
  */
-window.addEventListener('load', function() {
+window.addEventListener('load', () => {
   var status = document.getElementById("status");
   
   function updateOnlineStatus(event) {
     var condition = navigator.onLine ? "online" : "offline";
+
+    if(condition === 'online') {
+      console.log('Connection is: ONLINE, Sending any offline Posts to server...');
+      DBHelper.sendPostsToServer();
+    }
 
     status.className = condition;
     status.innerHTML = `BROWSER ${condition.toUpperCase()}`;

@@ -102,11 +102,11 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     db.then(db => {
       DBHelper.fetchReviewsByRestaurantId(restaurant.id, db) // get all reviews for this restaurant...
       .then((reviews) => {
-        self.restaurant.reviews = reviews;
         if (!reviews) {
           console.log((reviews === undefined) ? 'No Reviews were found in IndexedDb!' : reviews);
           return;
         }
+        self.restaurant.reviews = reviews;
         fillReviewsHTML();  // add review html to page...
       });
     });
@@ -200,7 +200,7 @@ addReview = () => {
     createdAt: new Date()
   };
 
-  console.log('DOM added review: '. frontEndReview);
+  // console.log('DOM added review: '. frontEndReview);
 
   // Send review to backend
   DBHelper.addReview(frontEndReview);
@@ -244,4 +244,13 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    if(event.data.msg === 'ONLINE') {
+      console.log('Connection is: ' + event.data.msg + ', Sending any offline Posts to server...');
+      DBHelper.sendPostsToServer();
+    }
+  });
 }

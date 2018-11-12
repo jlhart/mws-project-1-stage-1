@@ -53,7 +53,7 @@ self.addEventListener('install', event => {
       return cache.addAll(cacheFiles);
     })
   );
-});
+}); // END install...
 
 self.addEventListener('activate', event => {
   // Delete all caches that aren't named in CURRENT_CACHES.
@@ -79,45 +79,78 @@ self.addEventListener('activate', event => {
   );
   
   event.waitUntil(self.clients.claim());
-});
+}); // END activate...
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', async (event) => {
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-
-        // IMPORTANT: Clone the request. A request is a stream and
-        // can only be consumed once. Since we are consuming this
-        // once by cache and once by the browser for fetch, we need
-        // to clone the response.
-        let fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest)
-          .then((response) => {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            let responseToCache = response.clone();
-
-            caches.open(CURRENT_CACHES.cacheFiles)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
+  if (event.request.clone().method === 'GET') {
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Cache hit - return response
+          if (response) {
             return response;
           }
-        );
+
+          // IMPORTANT: Clone the request. A request is a stream and
+          // can only be consumed once. Since we are consuming this
+          // once by cache and once by the browser for fetch, we need
+          // to clone the response.
+          let fetchRequest = event.request.clone();
+
+          return fetch(fetchRequest)
+            .then((response) => {
+              // Check if we received a valid response
+              if(!response || response.status !== 200 || response.type !== 'basic') {
+                return response;
+              }
+
+              // IMPORTANT: Clone the response. A response is a stream
+              // and because we want the browser to consume the response
+              // as well as the cache consuming the response, we need
+              // to clone it so we have two streams.
+              let responseToCache = response.clone();
+
+              caches.open(CURRENT_CACHES.cacheFiles)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+
+              return response;
+            }
+          );
+        })
+      );
+    } else if (event.request.clone().method === 'POST') {
+      // attempt to send request normally
+      event.respondWith(fetch(event.request.clone())
+      .catch((error) => {
+        // Send a message to the client.
+        self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              msg: "OFFLINE"
+            });
+          });
+        });
+      }))
+    }
+}); // END fetch...
+
+self.addEventListener('sync', (event) => {
+  console.log('You are online!');
+  if (event.tag === 'sendData') { // event.tag name checked here must be the same as the one used while registering
+    // sync reviews
+    event.waitUntil(
+      // Inform clients to send our POST request(s) to the server, now that the user is back online
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            msg: "ONLINE"
+          });
+        });
       })
     );
-});
+  }
+}); // END sync...
+
