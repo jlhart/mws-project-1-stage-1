@@ -66,7 +66,7 @@ fetchRestaurantFromURL = (callback) => {
  * Create restaurant HTML and add it to the webpage
  */
 fillRestaurantHTML = (restaurant = self.restaurant) => {
-  const db = DBHelper.openDatabase();
+  // const db = DBHelper.openDatabase();
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
   
@@ -97,9 +97,9 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
 
-  if (!db) db = DBHelper.openDatabase() // open idb if it was not passed...
+  // if (!db) db = DBHelper.openDatabase() // open idb if it was not passed...
     // ...then...with db...
-    db.then(db => {
+    DBHelper.openDatabase().then(db => {
       DBHelper.fetchReviewsByRestaurantId(restaurant.id, db) // get all reviews for this restaurant...
       .then((reviews) => {
         if (!reviews) {

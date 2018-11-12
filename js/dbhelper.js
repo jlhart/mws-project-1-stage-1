@@ -142,7 +142,7 @@ class DBHelper {
     let restaurants = []
 
     // open database
-    DBHelper.openDatabase(db => {
+    DBHelper.openDatabase().then(db => {
 
       // loop through items
       const tx = db.transaction('restaurants');
@@ -173,7 +173,7 @@ class DBHelper {
     let restaurants = []
 
     // open database
-    DBHelper.openDatabase(db => {
+    DBHelper.openDatabase().then(db => {
 
       // loop through items
       const tx = db.transaction('restaurants');
@@ -440,7 +440,7 @@ class DBHelper {
     console.log('Checking for offline data to send...')
 
     // open database
-    return await DBHelper.openDatabase(db => {
+    return await DBHelper.openDatabase().then(db => {
       db.transaction('offline').objectStore('offline').getAll()
       .then(reviews => {
         // loop through items
@@ -466,22 +466,22 @@ class DBHelper {
     let reviews = []
 
     // open database
-    await DBHelper.openDatabase(db => {
+    await DBHelper.openDatabase().then(db => {
 
       // loop through items...
       const tx = db.transaction('reviews');
       tx.objectStore('reviews').getAll()
       .then(rs => {
         rs.forEach(review => {
-          if (rs.restaurant_id == restaurant) {
-            console.log('Found matching review in db: ' + rs);
+          if (review.restaurant_id == restaurant) {
+            console.log('Found matching review in db: ' + review);
             reviews.push(rs) // filter results
           }
         });
       })
 
-      tx.complete;
-      return db;
+      tx.complete
+      return db
     })
     .then(db => {  
       // loop through any offline items...
@@ -489,55 +489,56 @@ class DBHelper {
       tx.objectStore('offline').getAll()
       .then(rs => {
         rs.forEach(review => {
-          if (rs.restaurant_id == restaurant) {
-            console.log('Found matching offline review in db: ' + rs);
-            reviews.push(rs) // filter results
+          if (review.restaurant_id == restaurant) {
+            console.log('Found matching offline review in db: ' + review);
+            reviews.push(review) // filter results
           }
         });
       })
-
-      return tx.complete; 
+      console.log(reviews)
+      return tx.complete
     })
 
     // callback
-    .then(() => callback(null, reviews))
+    .then(() => {
+      console.log('CALLBACK!')
+      return callback(null, reviews)
+    })
 
     // in case of any error
-    .catch(e => callback(e, null))
+    .catch(e => {return callback(e, null)})
   };
 
   static async fetchReviewsByRestaurantId(id, db) {
 
-    // if(!navigator.onLine){
-    //   return await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error, reviews) => { // check for offline stored reviews...
-    //     self.reviews = reviews;
-    //     if (!reviews) {
-    //       console.error(error); // no reviews found...log error...
-    //       return;
-    //     }
-    //     return Promise.resolve(reviews); // return reviews retrieved from idb...
-    //   });
-    // }
-
-    return await fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`) // fetch all reviews for restaurant...
-      .then(response => response.json())  // return json data...
-      .then(reviews => {
-        const tx = db.transaction('reviews', 'readwrite'); // add each review...
-        const os = tx.objectStore('reviews'); // set handle to object store...
-        reviews.map(r => os.put(r)) // map over each review & add to object store...
-        return tx.complete.then(() => reviews); // then return reviews...
+    if(!navigator.onLine){
+      return await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error, reviews) => { // check for offline stored reviews...
+        console.log(reviews);
+        self.reviews = reviews;
+        return self.reviews; // return reviews retrieved from idb...
       })
-      .catch(error => {
-        return DBHelper.fetchOfflineReviewsByRestaurantId(id, (error, reviews) => { // check for offline stored reviews...
-          console.log('Error encountered while fetching reviews...looking for any offline stored reviews...', reviews);
-          self.reviews = reviews;
-          if (!reviews) {
-            console.error(error); // no reviews found...log error...
-            return;
-          }
-          return Promise.resolve(reviews); // return reviews retrieved from idb...
+      .then(reviews => Promise.resolve(reviews));
+    } else {
+      
+      return await fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`) // fetch all reviews for restaurant...
+        .then(response => response.json())  // return json data...
+        .then(reviews => {
+          const tx = db.transaction('reviews', 'readwrite'); // add each review...
+          const os = tx.objectStore('reviews'); // set handle to object store...
+          reviews.map(r => os.put(r)) // map over each review & add to object store...
+          return tx.complete.then(() => reviews); // then return reviews...
+        })
+        .catch(async error => {
+          const reviews_1 = await DBHelper.fetchOfflineReviewsByRestaurantId(id, (error_1, reviews) => {
+            console.log('Error encountered while fetching reviews...looking for any offline stored reviews...', reviews);
+            self.reviews = reviews;
+            return self.reviews; // return reviews retrieved from idb...
+          });
+          return Promise.resolve(reviews_1);
         });
-      });
+
+    } // END if...
+
   };
   
 
